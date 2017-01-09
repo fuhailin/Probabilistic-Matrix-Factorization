@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import random
-import numpy as np
 from numpy import linalg as LA
 from numpy import *
 import matplotlib.pyplot as plt
@@ -29,7 +28,7 @@ class PMF(object):
 
     def load_rating_data(self, file_path='data/ml-100k/u.data'):
         """
-        load movie lens 1M ratings from original rating file.
+        load movie lens 100k ratings from original rating file.
         need to download and put rating data in /data folder first.
         Source: http://www.grouplens.org/
         """
