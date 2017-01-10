@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import random
+import numpy as np
 from numpy import linalg as LA
 from numpy import *
 import matplotlib.pyplot as plt
