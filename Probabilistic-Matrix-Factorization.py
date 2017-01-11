@@ -16,16 +16,16 @@ class PMF(object):
         self.num_batches = num_batches  # Number of batches in each epoch (for SGD optimization),
         self.batch_size = batch_size  # Number of training samples used in each batches (for SGD optimization)
 
-        self.w_C = None
-        self.w_I = None
+        self.w_C = None  # Movie feature vectors
+        self.w_I = None  # User feature vectors
 
         self.err_train = []
         self.err_val = []
         self.data = None
         self.train_data = None
         self.test_data = None
-        self.train_errors = []
-        self.test_errors = []
+        self.train_rmse = []
+        self.test_rmse = []
 
     def load_rating_data(self, file_path='data/ml-100k/u.data'):
         """
@@ -91,25 +91,17 @@ class PMF(object):
             # Batch update
             for batch in range(self.num_batches):
                 # print "epoch %d batch %d" % (self.epoch, batch+1)
-
-                batch_idx = np.mod(np.arange(self.batch_size * batch, self.batch_size * (batch + 1)),
-                                   shuffled_order.shape[0])
-
+                batch_idx = np.mod(np.arange(self.batch_size * batch, self.batch_size * (batch + 1)), shuffled_order.shape[0])
                 batch_invID = np.array(train_vec[shuffled_order[batch_idx], 0], dtype='int32')
                 batch_comID = np.array(train_vec[shuffled_order[batch_idx], 1], dtype='int32')
 
                 # Compute Objective Function
-                pred_out = np.sum(np.multiply(self.w_I[batch_invID, :],
-                                              self.w_C[batch_comID, :]),
-                                  axis=1)  # mean_inv subtracted
-
+                pred_out = np.sum(np.multiply(self.w_I[batch_invID, :], self.w_C[batch_comID, :]), axis=1)  # mean_inv subtracted
                 rawErr = pred_out - train_vec[shuffled_order[batch_idx], 2] + self.mean_inv
 
                 # Compute gradients
-                Ix_C = 2 * np.multiply(rawErr[:, np.newaxis], self.w_I[batch_invID, :]) \
-                       + self._lambda * self.w_C[batch_comID, :]
-                Ix_I = 2 * np.multiply(rawErr[:, np.newaxis], self.w_C[batch_comID, :]) \
-                       + self._lambda * self.w_I[batch_invID, :]
+                Ix_C = 2 * np.multiply(rawErr[:, np.newaxis], self.w_I[batch_invID, :]) + self._lambda * self.w_C[batch_comID, :]
+                Ix_I = 2 * np.multiply(rawErr[:, np.newaxis], self.w_C[batch_comID, :]) + self._lambda * self.w_I[batch_invID, :]
 
                 dw_C = np.zeros((num_com, self.num_feat))
                 dw_I = np.zeros((num_inv, self.num_feat))
@@ -122,34 +114,27 @@ class PMF(object):
                 # Update with momentum
                 self.w_C_inc = self.momentum * self.w_C_inc + self.epsilon * dw_C / self.batch_size
                 self.w_I_inc = self.momentum * self.w_I_inc + self.epsilon * dw_I / self.batch_size
-
                 self.w_C = self.w_C - self.w_C_inc
                 self.w_I = self.w_I - self.w_I_inc
 
                 # Compute Objective Function after
                 if batch == self.num_batches - 1:
-                    pred_out = np.sum(np.multiply(self.w_I[np.array(train_vec[:, 0], dtype='int32'), :],
-                                                  self.w_C[np.array(train_vec[:, 1], dtype='int32'), :]),
-                                      axis=1)  # mean_inv subtracted
+                    pred_out = np.sum(np.multiply(self.w_I[np.array(train_vec[:, 0], dtype='int32'), :], self.w_C[np.array(train_vec[:, 1], dtype='int32'), :]), axis=1)  # mean_inv subtracted
                     rawErr = pred_out - train_vec[:, 2] + self.mean_inv
-                    obj = LA.norm(rawErr) ** 2 \
-                          + 0.5 * self._lambda * (LA.norm(self.w_I) ** 2 + LA.norm(self.w_C) ** 2)
-
+                    obj = LA.norm(rawErr) ** 2 + 0.5 * self._lambda * (LA.norm(self.w_I) ** 2 + LA.norm(self.w_C) ** 2)
                     self.err_train.append(np.sqrt(obj / pairs_tr))
 
                 # Compute validation error
                 if batch == self.num_batches - 1:
-                    pred_out = np.sum(np.multiply(self.w_I[np.array(val_vec[:, 0], dtype='int32'), :],
-                                                  self.w_C[np.array(val_vec[:, 1], dtype='int32'), :]),
-                                      axis=1)  # mean_inv subtracted
+                    pred_out = np.sum(np.multiply(self.w_I[np.array(val_vec[:, 0], dtype='int32'), :], self.w_C[np.array(val_vec[:, 1], dtype='int32'), :]), axis=1)  # mean_inv subtracted
                     rawErr = pred_out - val_vec[:, 2] + self.mean_inv
                     self.err_val.append(LA.norm(rawErr) / np.sqrt(pairs_va))
 
                     # Print info
                 if batch == self.num_batches - 1:
                     print('Training RMSE: %f, Test RMSE %f' % (self.err_train[-1], self.err_val[-1]))
-                    self.train_errors.append(self.err_train[-1])
-                    self.test_errors.append(self.err_val[-1])
+                    self.train_rmse.append(self.err_train[-1])
+                    self.test_rmse.append(self.err_val[-1])
                     # ****************Predict rating of all movies for the given user. ***************#
 
     def predict(self, invID):
@@ -197,8 +182,8 @@ if __name__ == "__main__":
     pmf.fit(train, test)
 
     # Check performance by plotting train and test errors
-    plt.plot(range(pmf.maxepoch), pmf.train_errors, marker='o', label='Training Data');
-    plt.plot(range(pmf.maxepoch), pmf.test_errors, marker='v', label='Test Data');
+    plt.plot(range(pmf.maxepoch), pmf.train_rmse, marker='o', label='Training Data');
+    plt.plot(range(pmf.maxepoch), pmf.test_rmse, marker='v', label='Test Data');
     plt.title('The MovieLens Dataset Learning Curve')
     plt.xlabel('Number of Epochs');
     plt.ylabel('RMSE');
