@@ -68,18 +68,18 @@ class PMF(object):
 
         # 1-p-i, 2-m-c
 
-        num_inv = int(max(np.amax(train_vec[:, 0]), np.amax(val_vec[:, 0]))) + 1  # 第0列，user总数
-        num_com = int(max(np.amax(train_vec[:, 1]), np.amax(val_vec[:, 1]))) + 1  # 第1列，movie总数
+        num_user = int(max(np.amax(train_vec[:, 0]), np.amax(val_vec[:, 0]))) + 1  # 第0列，user总数
+        num_movie = int(max(np.amax(train_vec[:, 1]), np.amax(val_vec[:, 1]))) + 1  # 第1列，movie总数
 
         incremental = False
         if ((not incremental) or (self.w_C is None)):
             # initialize
             self.epoch = 0
-            self.w_C = 0.1 * np.random.randn(num_com, self.num_feat)  # numpy.random.randn 正态分布
-            self.w_I = 0.1 * np.random.randn(num_inv, self.num_feat)
+            self.w_C = 0.1 * np.random.randn(num_movie, self.num_feat)  # numpy.random.randn 电影 M x D 正态分布矩阵
+            self.w_I = 0.1 * np.random.randn(num_user, self.num_feat)  # numpy.random.randn 用户 N x D 正态分布矩阵
 
-            self.w_C_inc = np.zeros((num_com, self.num_feat))  # 创建0矩阵
-            self.w_I_inc = np.zeros((num_inv, self.num_feat))
+            self.w_C_inc = np.zeros((num_movie, self.num_feat))  # 创建电影 M x D 0矩阵
+            self.w_I_inc = np.zeros((num_user, self.num_feat))  # 创建用户 N x D 0矩阵
 
         while self.epoch < self.maxepoch:
             self.epoch += 1
@@ -91,7 +91,7 @@ class PMF(object):
             # Batch update
             for batch in range(self.num_batches):
                 # print "epoch %d batch %d" % (self.epoch, batch+1)
-                batch_idx = np.mod(np.arange(self.batch_size * batch, self.batch_size * (batch + 1)), shuffled_order.shape[0])
+                batch_idx = np.mod(np.arange(self.batch_size * batch, self.batch_size * (batch + 1)), shuffled_order.shape[0])  # 本次迭代要使用的索引下标
                 batch_invID = np.array(train_vec[shuffled_order[batch_idx], 0], dtype='int32')
                 batch_comID = np.array(train_vec[shuffled_order[batch_idx], 1], dtype='int32')
 
@@ -103,8 +103,8 @@ class PMF(object):
                 Ix_C = 2 * np.multiply(rawErr[:, np.newaxis], self.w_I[batch_invID, :]) + self._lambda * self.w_C[batch_comID, :]
                 Ix_I = 2 * np.multiply(rawErr[:, np.newaxis], self.w_C[batch_comID, :]) + self._lambda * self.w_I[batch_invID, :]
 
-                dw_C = np.zeros((num_com, self.num_feat))
-                dw_I = np.zeros((num_inv, self.num_feat))
+                dw_C = np.zeros((num_movie, self.num_feat))
+                dw_I = np.zeros((num_user, self.num_feat))
 
                 # loop to aggreate the gradients of the same element
                 for i in range(self.batch_size):
