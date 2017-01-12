@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-import random
 import numpy as np
+import matplotlib.pyplot as plt
 from numpy import linalg as LA
 from numpy import *
-import matplotlib.pyplot as plt
-
+from LoadData import load_rating_data, spilt_rating_dat
 
 class PMF(object):
     def __init__(self, num_feat=10, epsilon=1, _lambda=0.1, momentum=0.8, maxepoch=100, num_batches=10, batch_size=1000):
@@ -27,38 +26,8 @@ class PMF(object):
         self.train_rmse = []
         self.test_rmse = []
 
-    def load_rating_data(self, file_path='data/ml-100k/u.data'):
-        """
-        load movie lens 100k ratings from original rating file.
-        need to download and put rating data in /data folder first.
-        Source: http://www.grouplens.org/
-        """
-        prefer = []
-        for line in open(file_path, 'r'):  # 打开指定文件
-            (userid, movieid, rating, ts) = line.split('\t')  # 数据集中每行有4项
-            uid = int(userid)
-            mid = int(movieid)
-            rat = float(rating)
-            prefer.append([uid, mid, rat])
-        self.data = array(prefer)
-        return self.data
-
-    def spilt_rating_dat(self, data, size=0.2):
-        train_data = []
-        test_data = []
-        for line in data:
-            rand = random.random()
-            if rand < size:
-                test_data.append(line)
-            else:
-                train_data.append(line)
-        self.train_data = array(train_data)
-        self.test_data = array(test_data)
-        return self.train_data, self.test_data
-
-        # ***Fit the model with train_tuple and evaluate RMSE on both train and validation data.  ***********#
-        # ***************** train_vec=TrainData, val_vec=TestData*************#
-
+    # ***Fit the model with train_tuple and evaluate RMSE on both train and validation data.  ***********#
+    # ***************** train_vec=TrainData, val_vec=TestData*************#
     def fit(self, train_vec, val_vec):
         # mean subtraction
         self.mean_inv = np.mean(train_vec[:, 2])  # 评分平均值
@@ -176,9 +145,9 @@ class PMF(object):
 if __name__ == "__main__":
     file_path = "data/ml-100k/u.data"
     pmf = PMF()
-    ratingdata = pmf.load_rating_data(file_path)
+    ratingdata = load_rating_data(file_path)
     print(len(np.unique(ratingdata[:, 0])), len(np.unique(ratingdata[:, 1])), pmf.num_feat)
-    train, test = pmf.spilt_rating_dat(ratingdata)
+    train, test = spilt_rating_dat(ratingdata)
     pmf.fit(train, test)
 
     # Check performance by plotting train and test errors
