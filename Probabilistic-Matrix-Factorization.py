@@ -160,9 +160,9 @@ class PMF(object):
 if __name__ == "__main__":
     file_path = "data/ml-100k/u.data"
     pmf = PMF()
-    ratings = load_rating_data(file_path)
     pmf.set_params({"num_feat": 10, "epsilon": 1, "_lambda": 0.1, "momentum": 0.8, "maxepoch": 100, "num_batches": 100,
                   "batch_size": 1000})
+    ratings = load_rating_data(file_path)
     print(len(np.unique(ratings[:, 0])), len(np.unique(ratings[:, 1])), pmf.num_feat)
     train, test = spilt_rating_dat(ratings)
     pmf.fit(train, test)
