@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-import matplotlib.pyplot as plt
 from numpy import linalg as LA
 from numpy import *
 import numpy as np
-from LoadData import load_rating_data, spilt_rating_dat
 
 
 class PMF(object):
@@ -155,25 +153,3 @@ class PMF(object):
             recall_acc += intersection_cnt.get(inv, 0) / float(invPairs_cnt[int(inv)])
 
         return precision_acc / len(inv_lst), recall_acc / len(inv_lst)
-
-
-if __name__ == "__main__":
-    file_path = "data/ml-100k/u.data"
-    pmf = PMF()
-    pmf.set_params({"num_feat": 10, "epsilon": 1, "_lambda": 0.1, "momentum": 0.8, "maxepoch": 100, "num_batches": 100,
-                  "batch_size": 1000})
-    ratings = load_rating_data(file_path)
-    print(len(np.unique(ratings[:, 0])), len(np.unique(ratings[:, 1])), pmf.num_feat)
-    train, test = spilt_rating_dat(ratings)
-    pmf.fit(train, test)
-
-    # Check performance by plotting train and test errors
-    plt.plot(range(pmf.maxepoch), pmf.train_rmse, marker='o', label='Training Data')
-    plt.plot(range(pmf.maxepoch), pmf.test_rmse, marker='v', label='Test Data')
-    plt.title('The MovieLens Dataset Learning Curve')
-    plt.xlabel('Number of Epochs')
-    plt.ylabel('RMSE')
-    plt.legend()
-    plt.grid()
-    plt.show()
-    print("precision_acc,recall_acc:" + str(pmf.topK(test)))

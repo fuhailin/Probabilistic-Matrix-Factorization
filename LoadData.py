@@ -1,5 +1,7 @@
 from numpy import *
 import random
+
+
 def load_rating_data(file_path='ml-100k/u.data'):
     """
     load movie lens 100k ratings from original rating file.
