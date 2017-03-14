@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from numpy import linalg as LA
-from numpy import *
 import numpy as np
 
 
@@ -100,8 +98,8 @@ class PMF(object):
                                                   self.w_Item[np.array(train_vec[:, 1], dtype='int32'), :]),
                                       axis=1)  # mean_inv subtracted
                     rawErr = pred_out - train_vec[:, 2] + self.mean_inv
-                    obj = LA.norm(rawErr) ** 2 \
-                          + 0.5 * self._lambda * (LA.norm(self.w_User) ** 2 + LA.norm(self.w_Item) ** 2)
+                    obj = np.linalg.norm(rawErr) ** 2 \
+                          + 0.5 * self._lambda * (np.linalg.norm(self.w_User) ** 2 + np.linalg.norm(self.w_Item) ** 2)
 
                     self.err_train.append(np.sqrt(obj / pairs_tr))
 
@@ -111,7 +109,7 @@ class PMF(object):
                                                   self.w_Item[np.array(val_vec[:, 1], dtype='int32'), :]),
                                       axis=1)  # mean_inv subtracted
                     rawErr = pred_out - val_vec[:, 2] + self.mean_inv
-                    self.err_val.append(LA.norm(rawErr) / np.sqrt(pairs_va))
+                    self.err_val.append(np.linalg.norm(rawErr) / np.sqrt(pairs_va))
 
                     # Print info
                     if batch == self.num_batches - 1:
