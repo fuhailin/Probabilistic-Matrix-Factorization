@@ -15,28 +15,23 @@ class PMF(object):
         self.w_Item = None  # Item feature vectors
         self.w_User = None  # User feature vectors
 
-        self.err_train = []
-        self.err_val = []
-        self.data = None
-        self.train_data = None
-        self.test_data = None
-        self.train_rmse = []
-        self.test_rmse = []
+        self.rmse_train = []
+        self.rmse_test = []
 
-    # ***Fit the model with train_tuple and evaluate RMSE on both train and validation data.  ***********#
-    # ***************** train_vec=TrainData, val_vec=TestData*************#
-    def fit(self, train_vec, val_vec):
+    # ***Fit the model with train_tuple and evaluate RMSE on both train and test data.  ***********#
+    # ***************** train_vec=TrainData, test_vec=TestData*************#
+    def fit(self, train_vec, test_vec):
         # mean subtraction
         self.mean_inv = np.mean(train_vec[:, 2])  # 评分平均值
 
         pairs_tr = train_vec.shape[0]  # traindata 中条目数
-        pairs_va = val_vec.shape[0]  # testdata中条目数
+        pairs_va = test_vec.shape[0]  # testdata中条目数
 
         # 1-p-i, 2-m-c
-        num_user = int(max(np.amax(train_vec[:, 0]), np.amax(val_vec[:, 0]))) + 1  # 第0列，user总数
-        num_item = int(max(np.amax(train_vec[:, 1]), np.amax(val_vec[:, 1]))) + 1  # 第1列，movie总数
+        num_user = int(max(np.amax(train_vec[:, 0]), np.amax(test_vec[:, 0]))) + 1  # 第0列，user总数
+        num_item = int(max(np.amax(train_vec[:, 1]), np.amax(test_vec[:, 1]))) + 1  # 第1列，movie总数
 
-        incremental = False
+        incremental = False  # 增量
         if ((not incremental) or (self.w_Item is None)):
             # initialize
             self.epoch = 0
@@ -101,21 +96,19 @@ class PMF(object):
                     obj = np.linalg.norm(rawErr) ** 2 \
                           + 0.5 * self._lambda * (np.linalg.norm(self.w_User) ** 2 + np.linalg.norm(self.w_Item) ** 2)
 
-                    self.err_train.append(np.sqrt(obj / pairs_tr))
+                    self.rmse_train.append(np.sqrt(obj / pairs_tr))
 
                 # Compute validation error
                 if batch == self.num_batches - 1:
-                    pred_out = np.sum(np.multiply(self.w_User[np.array(val_vec[:, 0], dtype='int32'), :],
-                                                  self.w_Item[np.array(val_vec[:, 1], dtype='int32'), :]),
+                    pred_out = np.sum(np.multiply(self.w_User[np.array(test_vec[:, 0], dtype='int32'), :],
+                                                  self.w_Item[np.array(test_vec[:, 1], dtype='int32'), :]),
                                       axis=1)  # mean_inv subtracted
-                    rawErr = pred_out - val_vec[:, 2] + self.mean_inv
-                    self.err_val.append(np.linalg.norm(rawErr) / np.sqrt(pairs_va))
+                    rawErr = pred_out - test_vec[:, 2] + self.mean_inv
+                    self.rmse_test.append(np.linalg.norm(rawErr) / np.sqrt(pairs_va))
 
                     # Print info
                     if batch == self.num_batches - 1:
-                        print('Training RMSE: %f, Test RMSE %f' % (self.err_train[-1], self.err_val[-1]))
-                        self.train_rmse.append(self.err_train[-1])
-                        self.test_rmse.append(self.err_val[-1])
+                        print('Training RMSE: %f, Test RMSE %f' % (self.rmse_train[-1], self.rmse_test[-1]))
 
     def predict(self, invID):
         return np.dot(self.w_Item, self.w_User[int(invID), :]) + self.mean_inv  # numpy.dot 点乘
