@@ -41,15 +41,15 @@ class PMF(object):
             self.w_Item_inc = np.zeros((num_item, self.num_feat))  # 创建电影 M x D 0矩阵
             self.w_User_inc = np.zeros((num_user, self.num_feat))  # 创建用户 N x D 0矩阵
 
-        while self.epoch < self.maxepoch:
+        while self.epoch < self.maxepoch:  # 检查迭代次数
             self.epoch += 1
 
             # Shuffle training truples
-            shuffled_order = np.arange(train_vec.shape[0])  # 创建等差array
+            shuffled_order = np.arange(train_vec.shape[0])  # 根据记录数创建等差array
             np.random.shuffle(shuffled_order)  # 用于将一个列表中的元素打乱
 
             # Batch update
-            for batch in range(self.num_batches):
+            for batch in range(self.num_batches):# 每次迭代要使用的数据量
                 # print "epoch %d batch %d" % (self.epoch, batch+1)
 
                 batch_idx = np.mod(np.arange(self.batch_size * batch,
