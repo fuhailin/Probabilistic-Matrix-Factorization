@@ -24,8 +24,8 @@ class PMF(object):
         # mean subtraction
         self.mean_inv = np.mean(train_vec[:, 2])  # 评分平均值
 
-        pairs_tr = train_vec.shape[0]  # traindata 中条目数
-        pairs_va = test_vec.shape[0]  # testdata中条目数
+        pairs_train = train_vec.shape[0]  # traindata 中条目数
+        pairs_test = test_vec.shape[0]  # testdata中条目数
 
         # 1-p-i, 2-m-c
         num_user = int(max(np.amax(train_vec[:, 0]), np.amax(test_vec[:, 0]))) + 1  # 第0列，user总数
@@ -49,12 +49,11 @@ class PMF(object):
             np.random.shuffle(shuffled_order)  # 用于将一个列表中的元素打乱
 
             # Batch update
-            for batch in range(self.num_batches):# 每次迭代要使用的数据量
+            for batch in range(self.num_batches):  # 每次迭代要使用的数据量
                 # print "epoch %d batch %d" % (self.epoch, batch+1)
 
-                batch_idx = np.mod(np.arange(self.batch_size * batch,
-                                             self.batch_size * (batch + 1)),
-                                   shuffled_order.shape[0])  # 本次迭代要使用的索引下标
+                test = np.arange(self.batch_size * batch, self.batch_size * (batch + 1))
+                batch_idx = np.mod(test, shuffled_order.shape[0])  # 本次迭代要使用的索引下标
 
                 batch_invID = np.array(train_vec[shuffled_order[batch_idx], 0], dtype='int32')
                 batch_comID = np.array(train_vec[shuffled_order[batch_idx], 1], dtype='int32')
@@ -62,13 +61,13 @@ class PMF(object):
                 # Compute Objective Function
                 pred_out = np.sum(np.multiply(self.w_User[batch_invID, :],
                                               self.w_Item[batch_comID, :]),
-                                  axis=1)  # mean_inv subtracted
+                                  axis=1)  # mean_inv subtracted # np.multiply对应位置元素相乘
 
                 rawErr = pred_out - train_vec[shuffled_order[batch_idx], 2] + self.mean_inv
 
                 # Compute gradients
                 Ix_C = 2 * np.multiply(rawErr[:, np.newaxis], self.w_User[batch_invID, :]) \
-                       + self._lambda * self.w_Item[batch_comID, :]
+                       + self._lambda * (self.w_Item[batch_comID, :])  # np.newaxis :increase the dimension
                 Ix_I = 2 * np.multiply(rawErr[:, np.newaxis], self.w_Item[batch_comID, :]) \
                        + self._lambda * self.w_User[batch_invID, :]
 
@@ -96,7 +95,7 @@ class PMF(object):
                     obj = np.linalg.norm(rawErr) ** 2 \
                           + 0.5 * self._lambda * (np.linalg.norm(self.w_User) ** 2 + np.linalg.norm(self.w_Item) ** 2)
 
-                    self.rmse_train.append(np.sqrt(obj / pairs_tr))
+                    self.rmse_train.append(np.sqrt(obj / pairs_train))
 
                 # Compute validation error
                 if batch == self.num_batches - 1:
@@ -104,7 +103,7 @@ class PMF(object):
                                                   self.w_Item[np.array(test_vec[:, 1], dtype='int32'), :]),
                                       axis=1)  # mean_inv subtracted
                     rawErr = pred_out - test_vec[:, 2] + self.mean_inv
-                    self.rmse_test.append(np.linalg.norm(rawErr) / np.sqrt(pairs_va))
+                    self.rmse_test.append(np.linalg.norm(rawErr) / np.sqrt(pairs_test))
 
                     # Print info
                     if batch == self.num_batches - 1:
