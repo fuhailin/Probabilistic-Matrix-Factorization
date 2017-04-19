@@ -55,29 +55,29 @@ class PMF(object):
                 test = np.arange(self.batch_size * batch, self.batch_size * (batch + 1))
                 batch_idx = np.mod(test, shuffled_order.shape[0])  # 本次迭代要使用的索引下标
 
-                batch_invID = np.array(train_vec[shuffled_order[batch_idx], 0], dtype='int32')
-                batch_comID = np.array(train_vec[shuffled_order[batch_idx], 1], dtype='int32')
+                batch_UserID = np.array(train_vec[shuffled_order[batch_idx], 0], dtype='int32')
+                batch_ItemID = np.array(train_vec[shuffled_order[batch_idx], 1], dtype='int32')
 
                 # Compute Objective Function
-                pred_out = np.sum(np.multiply(self.w_User[batch_invID, :],
-                                              self.w_Item[batch_comID, :]),
+                pred_out = np.sum(np.multiply(self.w_User[batch_UserID, :],
+                                              self.w_Item[batch_ItemID, :]),
                                   axis=1)  # mean_inv subtracted # np.multiply对应位置元素相乘
 
                 rawErr = pred_out - train_vec[shuffled_order[batch_idx], 2] + self.mean_inv
 
                 # Compute gradients
-                Ix_C = 2 * np.multiply(rawErr[:, np.newaxis], self.w_User[batch_invID, :]) \
-                       + self._lambda * (self.w_Item[batch_comID, :])  # np.newaxis :increase the dimension
-                Ix_I = 2 * np.multiply(rawErr[:, np.newaxis], self.w_Item[batch_comID, :]) \
-                       + self._lambda * self.w_User[batch_invID, :]
+                Ix_User = 2 * np.multiply(rawErr[:, np.newaxis], self.w_Item[batch_ItemID, :]) \
+                       + self._lambda * self.w_User[batch_UserID, :]
+                Ix_Item = 2 * np.multiply(rawErr[:, np.newaxis], self.w_User[batch_UserID, :]) \
+                       + self._lambda * (self.w_Item[batch_ItemID, :])  # np.newaxis :increase the dimension
 
                 dw_Item = np.zeros((num_item, self.num_feat))
                 dw_User = np.zeros((num_user, self.num_feat))
 
                 # loop to aggreate the gradients of the same element
                 for i in range(self.batch_size):
-                    dw_Item[batch_comID[i], :] += Ix_C[i, :]
-                    dw_User[batch_invID[i], :] += Ix_I[i, :]
+                    dw_Item[batch_ItemID[i], :] += Ix_Item[i, :]
+                    dw_User[batch_UserID[i], :] += Ix_User[i, :]
 
                 # Update with momentum
                 self.w_Item_inc = self.momentum * self.w_Item_inc + self.epsilon * dw_Item / self.batch_size
