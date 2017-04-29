@@ -1,4 +1,4 @@
-Python Implementation of Probabilistic Matrix Factorization Algorithm 
+## Python Implementation of Probabilistic Matrix Factorization Algorithm 
 ==========================================
 
 [![Build Status](https://travis-ci.org/fuhailin/Probabilistic-Matrix-Factorization.svg?branch=master)](https://travis-ci.org/fuhailin/Probabilistic-Matrix-Factorization)
